@@ -9,8 +9,6 @@ import (
 	"github.com/Integraal/chat-ops-bot/telegram"
 )
 
-var cal chan string
-var users []user
 var configuration config
 
 type user struct {
@@ -20,7 +18,7 @@ type user struct {
 }
 
 type config struct {
-	Users []user `json:"users"`
+	Users    []user `json:"users"`
 	Telegram telegram.Config `json:"telegram"`
 }
 
