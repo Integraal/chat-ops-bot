@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"github.com/integraal/chat-ops-bot/event"
 	"github.com/integraal/chat-ops-bot/telegram"
