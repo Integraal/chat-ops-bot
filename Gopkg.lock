@@ -16,8 +16,8 @@
 [[projects]]
   branch = "master"
   name = "github.com/integraal/chat-ops-bot"
-  packages = ["components/config","components/user","event","telegram"]
-  revision = "f1893aa1e30806f72551596be038e3dfd6e577c7"
+  packages = ["components/config","components/event","components/telegram","components/user"]
+  revision = "7644483ac7610564d9dc73781b7732c10ffbe7dc"
 
 [[projects]]
   name = "github.com/technoweenie/multipartstreamer"
@@ -28,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ff0fcfbe27c8d51a12e0c2ccb6148fa44fe812ff7862b2704ecfb1c1918dcd40"
+  inputs-digest = "f4d3d03bb2525c48cb378d2c62e444085a82c2db0da0264609cd224481602c31"
   solver-name = "gps-cdcl"
   solver-version = 1
