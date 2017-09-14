@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"sync"
-	"github.com/Integraal/chat-ops-bot/event"
+	"github.com/integraal/chat-ops-bot/event"
 )
 
 type Config struct {
@@ -144,14 +144,14 @@ func (b *Bot) updatePollMarkup(event *event.Event, messageId int) {
 }
 
 func (b *Bot) SendPoll(event *event.Event) {
-	text := "Did you get to event" + strconv.Itoa(int(event.ID)) + "?"
+	text := "Кто участвовал в встрече " + strconv.Itoa(int(event.ID)) + "?"
 	message := tlg.NewMessage(b.chatId, text)
 	message.ReplyMarkup = b.getPollMarkup(event)
 	b.botApi.Send(message)
 }
 
 func (b *Bot) SendReminder(event *event.Event) {
-	text := "Will you go to event" + strconv.Itoa(int(event.ID)) + "?"
+	text := "Скоро будет встреча " + strconv.Itoa(int(event.ID))
 	b.sendMessage(text)
 }
 
