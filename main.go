@@ -18,6 +18,7 @@ type user struct {
 }
 type config struct {
 	Users []user
+	Telegram TelegramConfig
 }
 
 func init() {
@@ -32,7 +33,7 @@ func main() {
 }
 
 func startBot() {
-	bot, err := NewBot(TelegramConfig{})
+	bot, err := NewBot(configuration.Telegram)
 	if err != nil {
 		panic(err)
 	}
