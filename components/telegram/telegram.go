@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"sync"
-	"github.com/integraal/chat-ops-bot/event"
+	"github.com/integraal/chat-ops-bot/components/event"
 )
 
 type Config struct {

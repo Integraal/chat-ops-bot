@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"sync"
-	"github.com/integraal/chat-ops-bot/event"
-	"github.com/integraal/chat-ops-bot/telegram"
+	"github.com/integraal/chat-ops-bot/components/event"
+	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/config"
 	"github.com/integraal/chat-ops-bot/components/user"
 )
