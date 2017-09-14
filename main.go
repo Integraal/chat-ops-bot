@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"strconv"
+	"sync"
+	"github.com/Integraal/chat-ops-bot/telegram"
 )
 
 var cal chan string
@@ -16,9 +18,10 @@ type user struct {
 	JiraUsername string
 	IcsLink      string
 }
+
 type config struct {
-	Users []user
-	Telegram TelegramConfig
+	Users []user `json:"users"`
+	Telegram telegram.Config `json:"telegram"`
 }
 
 func init() {
@@ -28,12 +31,16 @@ func init() {
 	}
 	json.Unmarshal(conf, &configuration)
 }
-func main() {
 
+func main() {
+	var wg sync.WaitGroup
+	bot := startBot(&wg)
+	bot.SendPoll(999)
+	wg.Wait()
 }
 
-func startBot() {
-	bot, err := NewBot(configuration.Telegram)
+func startBot(wg *sync.WaitGroup) *telegram.Bot {
+	bot, err := telegram.NewBot(configuration.Telegram)
 	if err != nil {
 		panic(err)
 	}
@@ -43,5 +50,7 @@ func startBot() {
 	bot.OnDisagree(func(chatId int64, eventId int64) {
 		fmt.Println("User " + strconv.Itoa(int(chatId)) + " wasn't present on event " + strconv.Itoa(int(eventId)))
 	})
-	go bot.listen()
+	go bot.Listen(wg)
+	wg.Add(1)
+	return bot
 }
