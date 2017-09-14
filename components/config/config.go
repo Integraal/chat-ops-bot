@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"fmt"
 	"encoding/json"
-	"github.com/integraal/chat-ops-bot/telegram"
+	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/user"
 )
 
