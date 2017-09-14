@@ -57,16 +57,14 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	}
 	bot.OnAgree(func(chatId int64, eventId int64) *event.Event {
 		if e, ok := event.Events[eventId]; ok {
-			text := "User " + strconv.Itoa(int(chatId)) + " was present on event " + strconv.Itoa(int(eventId))
-			fmt.Println(text)
+			fmt.Println("NO")
 			return &e
 		}
 		return nil
 	})
 	bot.OnDisagree(func(chatId int64, eventId int64) *event.Event  {
 		if e, ok := event.Events[eventId]; ok {
-			text := "User " + strconv.Itoa(int(chatId)) + " wasn't present on event " + strconv.Itoa(int(eventId))
-			fmt.Println(text)
+			fmt.Println("YES")
 			return &e
 		}
 		return nil
