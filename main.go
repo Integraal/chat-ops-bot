@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var cal chan string
-var users []user
 var configuration config
 
 type user struct {
@@ -17,7 +15,7 @@ type user struct {
 	IcsLink      string
 }
 type config struct {
-	Users []user
+	Users    []user
 	Telegram TelegramConfig
 }
 
