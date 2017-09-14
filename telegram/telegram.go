@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"sync"
+	"github.com/Integraal/chat-ops-bot/event"
 )
 
 type Config struct {
@@ -13,31 +14,39 @@ type Config struct {
 	Timeout int `json:"timeout"`
 }
 
+const (
+	REPLY_YES = "Yes"
+	REPLY_NO  = "No"
+)
+
+type ButtonPress struct {
+	EventID int64 `json:"eventId"`
+	Reply   string `json:"reply"`
+}
+
+func (bp *ButtonPress) marshall() string {
+	str, err := json.Marshal(bp)
+	if err != nil {
+		panic(err)
+	}
+	return string(str)
+}
+
 var bot Bot
 
 type Bot struct {
 	timeout    int
 	chatId     int64
 	botApi     tlg.BotAPI
-	onAgree    func(chatId int64, eventId int64)
-	onDisagree func(chatId int64, eventId int64)
+	onAgree    func(chatId int64, eventId int64) *event.Event
+	onDisagree func(chatId int64, eventId int64) *event.Event
 }
 
-const (
-	REPLY_YES = "Yes"
-	REPLY_NO = "No"
-)
-
-type ButtonPress struct {
-	eventId int64 // TODO: event struct
-	reply string
-}
-
-func (b *Bot) OnAgree(callback func(chatId int64, eventId int64)) {
+func (b *Bot) OnAgree(callback func(chatId int64, eventId int64) *event.Event) {
 	b.onAgree = callback
 }
 
-func (b *Bot) OnDisagree(callback func(chatId int64, eventId int64)) {
+func (b *Bot) OnDisagree(callback func(chatId int64, eventId int64) *event.Event) {
 	b.onDisagree = callback
 }
 
@@ -47,7 +56,7 @@ func NewBot(config Config) (*Bot, error) {
 		return nil, err
 	}
 	bot = Bot{
-		chatId: config.ChatID,
+		chatId:  config.ChatID,
 		timeout: config.Timeout,
 		botApi:  *botApi,
 	}
@@ -71,61 +80,82 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 	}
 
 	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
 		if update.CallbackQuery != nil {
-			buttonPress := ButtonPress{}
-			err = json.Unmarshal([]byte(update.CallbackQuery.Data), buttonPress)
+			var buttonPress ButtonPress
+			err = json.Unmarshal([]byte(update.CallbackQuery.Data), &buttonPress)
 			if err != nil {
 				panic(err)
 			}
-			if buttonPress.reply == REPLY_YES {
-				b.onAgree(int64(update.CallbackQuery.From.ID), buttonPress.eventId)
+			var responseEvent *event.Event
+			userId := int64(update.CallbackQuery.From.ID)
+			if buttonPress.Reply == REPLY_YES {
+				responseEvent = b.onAgree(userId, buttonPress.EventID)
+				if responseEvent != nil {
+					responseEvent.SetAgree(userId)
+				}
+				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Ок, я отмечу время в JIRA"))
 			}
-			if buttonPress.reply == REPLY_NO {
-				b.onDisagree(int64(update.CallbackQuery.From.ID), buttonPress.eventId)
+			if buttonPress.Reply == REPLY_NO {
+				responseEvent = b.onDisagree(userId, buttonPress.EventID)
+				if responseEvent != nil {
+					responseEvent.SetDisagree(userId)
+				}
+				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Время в JIRA не будет учтено"))
+			}
+			if responseEvent != nil {
+				b.updatePollMarkup(responseEvent, update.CallbackQuery.Message.MessageID)
 			}
 		}
 	}
 	wg.Done()
 }
 
-//TODO: Event struct and pretty printed message
-func (b *Bot) SendReminder(eventId int64) {
-	text := "Will you go to event" + strconv.Itoa(int(eventId)) + "?"
-	message := tlg.NewMessage(b.chatId, text)
-	b.botApi.Send(message)
-}
-
-func (bp *ButtonPress) marshall() string {
-	str, err := json.Marshal(bp)
-	if err != nil {
-		panic(err)
-	}
-	return string(str)
-}
-
-//TODO: Event struct and pretty printed message
-func (b *Bot) SendPoll(eventId int64) {
-	text := "Did you get to event" + strconv.Itoa(int(eventId)) + "?"
-	message := tlg.NewMessage(b.chatId, text)
+func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 
 	yes := ButtonPress{
-		eventId: eventId,
-		reply: REPLY_YES,
+		EventID: event.ID,
+		Reply:   REPLY_YES,
 	}
 	no := ButtonPress{
-		eventId: eventId,
-		reply: REPLY_NO,
+		EventID: event.ID,
+		Reply:   REPLY_NO,
+	}
+
+	yesText := "👍"
+	noText := "👎"
+
+	if len(event.Agreed) > 0 {
+		yesText += " " + strconv.Itoa(len(event.Agreed))
+	}
+	if len(event.Disagreed) > 0 {
+		noText += " " + strconv.Itoa(len(event.Disagreed))
 	}
 
 	buttons := []tlg.InlineKeyboardButton{
-		tlg.NewInlineKeyboardButtonData("Yes", yes.marshall()),
-		tlg.NewInlineKeyboardButtonData("No", no.marshall()),
+		tlg.NewInlineKeyboardButtonData(yesText, yes.marshall()),
+		tlg.NewInlineKeyboardButtonData(noText, no.marshall()),
 	}
+	return tlg.NewInlineKeyboardMarkup(buttons)
+}
 
-	message.ReplyMarkup = tlg.NewInlineKeyboardMarkup(buttons)
+func (b *Bot) updatePollMarkup(event *event.Event, messageId int) {
+	message := tlg.NewEditMessageReplyMarkup(b.chatId, messageId, b.getPollMarkup(event))
+	b.botApi.Send(message)
+}
+
+func (b *Bot) SendPoll(event *event.Event) {
+	text := "Did you get to event" + strconv.Itoa(int(event.ID)) + "?"
+	message := tlg.NewMessage(b.chatId, text)
+	message.ReplyMarkup = b.getPollMarkup(event)
+	b.botApi.Send(message)
+}
+
+func (b *Bot) SendReminder(event *event.Event) {
+	text := "Will you go to event" + strconv.Itoa(int(event.ID)) + "?"
+	b.sendMessage(text)
+}
+
+func (b *Bot) sendMessage(text string) {
+	message := tlg.NewMessage(b.chatId, text)
 	b.botApi.Send(message)
 }

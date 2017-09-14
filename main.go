@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 	"github.com/Integraal/chat-ops-bot/telegram"
+	"github.com/Integraal/chat-ops-bot/event"
 )
 
 var configuration config
@@ -31,9 +32,21 @@ func init() {
 }
 
 func main() {
+	event.Events = make(map[int64]event.Event)
+	event.Events[1] = event.Event{
+		ID: 1,
+		Agreed: make(map[int64]bool),
+		Disagreed: make(map[int64]bool),
+	}
+	event.Events[2] = event.Event{
+		ID: 2,
+		Agreed: make(map[int64]bool),
+		Disagreed: make(map[int64]bool),
+	}
+	e := event.Events[2]
 	var wg sync.WaitGroup
 	bot := startBot(&wg)
-	bot.SendPoll(999)
+	bot.SendPoll(&e)
 	wg.Wait()
 }
 
@@ -42,11 +55,21 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	if err != nil {
 		panic(err)
 	}
-	bot.OnAgree(func(chatId int64, eventId int64) {
-		fmt.Println("User " + strconv.Itoa(int(chatId)) + " was present on event " + strconv.Itoa(int(eventId)))
+	bot.OnAgree(func(chatId int64, eventId int64) *event.Event {
+		if e, ok := event.Events[eventId]; ok {
+			text := "User " + strconv.Itoa(int(chatId)) + " was present on event " + strconv.Itoa(int(eventId))
+			fmt.Println(text)
+			return &e
+		}
+		return nil
 	})
-	bot.OnDisagree(func(chatId int64, eventId int64) {
-		fmt.Println("User " + strconv.Itoa(int(chatId)) + " wasn't present on event " + strconv.Itoa(int(eventId)))
+	bot.OnDisagree(func(chatId int64, eventId int64) *event.Event  {
+		if e, ok := event.Events[eventId]; ok {
+			text := "User " + strconv.Itoa(int(chatId)) + " wasn't present on event " + strconv.Itoa(int(eventId))
+			fmt.Println(text)
+			return &e
+		}
+		return nil
 	})
 	go bot.Listen(wg)
 	wg.Add(1)
