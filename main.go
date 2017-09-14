@@ -2,35 +2,20 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"encoding/json"
 	"strconv"
 	"sync"
-	"github.com/Integraal/chat-ops-bot/telegram"
-	"github.com/Integraal/chat-ops-bot/event"
+	"github.com/integraal/chat-ops-bot/event"
+	"github.com/integraal/chat-ops-bot/telegram"
+	"github.com/integraal/chat-ops-bot/components/config"
+	"github.com/integraal/chat-ops-bot/components/user"
 )
 
-var configuration config
-
-type user struct {
-	TelegramId   int
-	JiraUsername string
-	IcsLink      string
-}
-
-type config struct {
-	Users    []user `json:"users"`
-	Telegram telegram.Config `json:"telegram"`
-}
+var conf *config.Config
 
 func init() {
-	conf, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
-	}
-	json.Unmarshal(conf, &configuration)
+	conf = config.Initialize()
+	user.Initialize(conf.Users)
 }
-
 func main() {
 	event.Events = make(map[int64]event.Event)
 	event.Events[1] = event.Event{
@@ -51,7 +36,7 @@ func main() {
 }
 
 func startBot(wg *sync.WaitGroup) *telegram.Bot {
-	bot, err := telegram.NewBot(configuration.Telegram)
+	bot, err := telegram.NewBot(conf.Telegram)
 	if err != nil {
 		panic(err)
 	}
