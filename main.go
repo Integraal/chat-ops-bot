@@ -5,13 +5,22 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"strconv"
-	"github.com/integraal/chat-ops-bot/components/config"
+	"sync"
+	"github.com/Integraal/chat-ops-bot/telegram"
 )
-const(
-	confFileName = "config.json"
-)
-var configuration *config.Config = config.Read(confFileName)
 
+var configuration config
+
+type user struct {
+	TelegramId   int
+	JiraUsername string
+	IcsLink      string
+}
+
+type config struct {
+	Users    []user `json:"users"`
+	Telegram telegram.Config `json:"telegram"`
+}
 
 func init() {
 	conf, err := ioutil.ReadFile("config.json")
@@ -20,12 +29,16 @@ func init() {
 	}
 	json.Unmarshal(conf, &configuration)
 }
-func main() {
 
+func main() {
+	var wg sync.WaitGroup
+	bot := startBot(&wg)
+	bot.SendPoll(999)
+	wg.Wait()
 }
 
-func startBot() {
-	bot, err := NewBot(configuration.Telegram)
+func startBot(wg *sync.WaitGroup) *telegram.Bot {
+	bot, err := telegram.NewBot(configuration.Telegram)
 	if err != nil {
 		panic(err)
 	}
@@ -35,5 +48,7 @@ func startBot() {
 	bot.OnDisagree(func(chatId int64, eventId int64) {
 		fmt.Println("User " + strconv.Itoa(int(chatId)) + " wasn't present on event " + strconv.Itoa(int(eventId)))
 	})
-	go bot.listen()
+	go bot.Listen(wg)
+	wg.Add(1)
+	return bot
 }
