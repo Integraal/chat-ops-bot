@@ -5,19 +5,13 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"strconv"
+	"github.com/integraal/chat-ops-bot/components/config"
 )
+const(
+	confFileName = "config.json"
+)
+var configuration *config.Config = config.Read(confFileName)
 
-var configuration config
-
-type user struct {
-	TelegramId   int
-	JiraUsername string
-	IcsLink      string
-}
-type config struct {
-	Users    []user
-	Telegram TelegramConfig
-}
 
 func init() {
 	conf, err := ioutil.ReadFile("config.json")
