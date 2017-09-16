@@ -19,12 +19,15 @@ func Initialize(users []User) {
 func Get() []User {
 	return usersArray
 }
-func (u *User) Events(t time.Time) ([]*ics.Event, error) {
+func (u *User) Calendars() ([]*ics.Calendar, error) {
 	parser := ics.New()
 	inputChan := parser.GetInputChan()
 	inputChan <- u.IcsLink
 	parser.Wait()
-	cal, err := parser.GetCalendars()
+	return parser.GetCalendars()
+}
+func (u *User) Events(t time.Time) ([]*ics.Event, error) {
+	cal, err := u.Calendars()
 	if err != nil {
 		return nil, err
 	}
