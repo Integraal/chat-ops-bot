@@ -10,5 +10,8 @@
     "token": "1234567890:abcdefABCDEF",
     "chatId": 123456789,
     "timeout": 60
+  },
+  "calendar": {
+    "upcomingLimit": 20
   }
 }

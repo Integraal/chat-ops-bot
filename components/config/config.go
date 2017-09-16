@@ -15,6 +15,7 @@ const (
 type Config struct {
 	Users    []user.User
 	Telegram telegram.Config
+	Calendar user.CalendarConfig
 }
 
 func Read(filename string) *Config {
