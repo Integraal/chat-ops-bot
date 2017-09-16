@@ -22,6 +22,7 @@ func Initialize(users []User, limit int) {
 	usersArray = users
 	upcomingLimit = limit
 }
+
 func Get() []User {
 	return usersArray
 }

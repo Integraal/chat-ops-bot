@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/integraal/chat-ops-bot/components/event"
 	"io/ioutil"
+	"github.com/integraal/chat-ops-bot/components/user"
 )
 
 var jira Jira
@@ -32,8 +33,9 @@ type Config struct {
 }
 
 func Initialize(config Config) {
-	cl, _ := client.NewClient(nil, "https://jira.atlassian.com/")
-	cl.Authentication.AcquireSessionCookie(config.Username, config.Password)
+	cl, _ := client.NewClient(nil, config.Url)
+	cl.Authentication.SetBasicAuth(config.Username, config.Password)
+	//cl.Authentication.AcquireSessionCookie(config.Username, config.Password)
 	jira = Jira{
 		client:      cl,
 		issuePrefix: config.IssuePrefix,
@@ -120,7 +122,7 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 			},
 		},
 	}
-	fmt.Printf("%v", *i.Fields)
+	fmt.Printf("%+v\n", *i.Fields)
 	issue, response, err := j.client.Issue.Create(i)
 	body, _ := ioutil.ReadAll(response.Body)
 	fmt.Println(string(body))
@@ -128,4 +130,46 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 		return nil, err
 	}
 	return issue, nil
+}
+
+type WorklogIssue struct {
+	Key string `json:"key"`
+}
+
+type WorklogUser struct {
+	Name string `json:"name"`
+}
+
+type Worklog struct {
+	ID int64 `json:"id,omitempty"`
+	Comment string `json:"comment,omitempty"`
+	Self string `json:"self,omitempty"`
+	Issue *WorklogIssue `json:"issue,omitempty"`
+	Author *WorklogUser `json:"author,omitempty"`
+	TimeSpentSeconds int64 `json:"timeSpentSeconds,omitempty"`
+	BilledSeconds int64 `json:"billedSeconds,omitempty"`
+	DateStarted string `json:"dateStarted,omitempty"`
+}
+
+func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.User) error {
+	worklog := Worklog{
+		Comment: "Присутствие на событии " + evt.Summary,
+		TimeSpentSeconds: int64(evt.Duration.Seconds()),
+		Author: &WorklogUser{user.JiraUsername},
+		Issue: &WorklogIssue{issue.Key},
+		DateStarted: evt.Start.Format("2006-01-02T15:04:05+0700"),
+	}
+	req, err := j.client.NewRequest("POST","rest/tempo-timesheets/3/worklogs/", &worklog)
+
+	body, _ := ioutil.ReadAll(req.Body)
+	fmt.Println(string(body))
+	if err != nil {
+		return err
+	}
+
+	_, err = j.client.Do(req, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -124,11 +124,11 @@ func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 	yesText := "👍"
 	noText := "👎"
 
-	if len(event.Agreed) > 0 {
-		yesText += " " + strconv.Itoa(len(event.Agreed))
+	if count := event.GetAgreedCount(); count > 0 {
+		yesText += " " + strconv.Itoa(count)
 	}
-	if len(event.Disagreed) > 0 {
-		noText += " " + strconv.Itoa(len(event.Disagreed))
+	if count := event.GetDisagreedCount(); count > 0 {
+		noText += " " + strconv.Itoa(count)
 	}
 
 	buttons := []tlg.InlineKeyboardButton{

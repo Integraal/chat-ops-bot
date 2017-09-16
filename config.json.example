@@ -11,6 +11,15 @@
     "chatId": 123456789,
     "timeout": 60
   },
+  "jira": {
+    "url": "https://jira.exset.com/",
+    "username": "",
+    "password": "",
+    "project": "GPS",
+    "issuePrefix": "[TimeTracking] ",
+    "issueLabel": "TimeTracking",
+    "issueType": "Task"
+  }
   "calendar": {
     "upcomingLimit": 20
   }
