@@ -17,6 +17,7 @@ type Config struct {
 	Users    []user.User
 	Telegram telegram.Config
 	Jira jira.Config
+	Calendar user.CalendarConfig
 }
 
 func Read(filename string) *Config {

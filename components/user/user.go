@@ -12,9 +12,15 @@ type User struct {
 	JiraUsername string
 	IcsLink      string
 }
+type CalendarConfig struct {
+	UpcomingEvents int
+}
 
-func Initialize(users []User) {
+var upcomingLimit int
+
+func Initialize(users []User, limit int) {
 	usersArray = users
+	upcomingLimit = limit
 }
 func Get() []User {
 	return usersArray
@@ -27,10 +33,62 @@ func (u *User) Calendars() ([]*ics.Calendar, error) {
 	return parser.GetCalendars()
 }
 
-func (u *User) Events(t time.Time) ([]*ics.Event, error) {
-	cal, err := u.Calendars()
+func (u *User) Events() ([]ics.Event, error) {
+	var events []ics.Event
+	cals, err := u.Calendars()
 	if err != nil {
 		return nil, err
 	}
-	return cal[0].GetEventsByDate(t)
+	for _, cal := range cals {
+		events = append(events, cal.GetEvents()...)
+	}
+	return events, nil
+}
+func (u *User) UpcomingEvents() ([]ics.Event, error) {
+	var events []ics.Event
+	cals, err := u.Calendars()
+	if err != nil {
+		return nil, err
+	}
+	for _, cal := range cals {
+		events = append(events, cal.GetUpcomingEvents(upcomingLimit)...)
+	}
+	return events, nil
+}
+func (u *User) EventsByTime(t time.Time) ([]*ics.Event, error) {
+	var events []*ics.Event
+	cals, err := u.Calendars()
+	if err != nil {
+		return nil, err
+	}
+	for _, cal := range cals {
+		evs, err := cal.GetEventsByDate(t)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, evs...)
+	}
+	return events, nil
+}
+func Calendars() ([]*ics.Calendar, error) {
+	var calendars []*ics.Calendar
+	for _, user := range Get() {
+		cal, err := user.Calendars()
+		if err != nil {
+			return nil, err
+		}
+		calendars = append(calendars, cal...)
+	}
+	return calendars, nil
+}
+func UpcomingEvents() ([]ics.Event, error) {
+	var events []ics.Event
+	for _, user := range Get() {
+		evs, err := user.UpcomingEvents()
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, evs...)
+	}
+	return events, nil
 }
