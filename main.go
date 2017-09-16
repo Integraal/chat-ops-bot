@@ -15,6 +15,7 @@ func init() {
 	conf = config.Initialize()
 	user.Initialize(conf.Users)
 }
+
 func main() {
 	event.Events = make(map[int64]event.Event)
 	event.Events[1] = event.Event{

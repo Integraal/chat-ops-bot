@@ -8,6 +8,18 @@
   revision = "e6b6b056a5f11e8ddb5aba01b1badc53e7b9abca"
 
 [[projects]]
+  name = "github.com/andygrunwald/go-jira"
+  packages = ["."]
+  revision = "acbc88d59582a4885dbd82fd775caa7c15245171"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/go-telegram-bot-api/telegram-bot-api"
   packages = ["."]
   revision = "0a57807db79efce7f6719fbb2c0e0f83fda79aec"
@@ -15,9 +27,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/integraal/chat-ops-bot"
-  packages = ["components/config","components/event","components/telegram","components/user"]
-  revision = "7644483ac7610564d9dc73781b7732c10ffbe7dc"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   name = "github.com/technoweenie/multipartstreamer"
@@ -25,9 +37,15 @@
   revision = "a90a01d73ae432e2611d178c18367fbaa13e0154"
   version = "v1.0.1"
 
+[[projects]]
+  name = "github.com/trivago/tgo"
+  packages = ["tcontainer","treflect"]
+  revision = "e4d1ddd28c17dd89ed26327cf69fded22060671b"
+  version = "v1.0.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f4d3d03bb2525c48cb378d2c62e444085a82c2db0da0264609cd224481602c31"
+  inputs-digest = "185317066ab36ebcccb9ac4912c3186d4fa230c1dc4c3913daa8484cfc5b1bd1"
   solver-name = "gps-cdcl"
   solver-version = 1
