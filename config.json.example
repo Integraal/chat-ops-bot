@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "jiraUsername": "username",
+      "icsLink": "https://link.to/calendar",
+      "telegramId": 1234567890
+    }
+  ],
+  "telegram": {
+    "token": "1234567890:abcdefABCDEF",
+    "chatId": 123456789,
+    "timeout": 60
+  }
+}
