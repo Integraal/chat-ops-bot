@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"errors"
 	"github.com/integraal/chat-ops-bot/components/event"
-	"strconv"
+	"io/ioutil"
 )
 
 var jira Jira
@@ -21,7 +21,7 @@ type Jira struct {
 	issueType   string
 }
 
-type JiraConfig struct {
+type Config struct {
 	Url         string `json:"url"`
 	Username    string `json:"username"`
 	Password    string `json:"password"`
@@ -31,9 +31,9 @@ type JiraConfig struct {
 	IssueType   string `json:"issueType"`   // Task
 }
 
-func Initialize(config JiraConfig) {
+func Initialize(config Config) {
 	cl, _ := client.NewClient(nil, "https://jira.atlassian.com/")
-	cl.Authentication.SetBasicAuth(config.Username, config.Password)
+	cl.Authentication.AcquireSessionCookie(config.Username, config.Password)
 	jira = Jira{
 		client:      cl,
 		issuePrefix: config.IssuePrefix,
@@ -42,6 +42,10 @@ func Initialize(config JiraConfig) {
 		username:    config.Username,
 		issueType:   config.IssueType,
 	}
+}
+
+func Get() *Jira {
+	return &jira
 }
 
 func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, error) {
@@ -56,18 +60,18 @@ func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, error) {
 	return issue, nil
 }
 
-func (j *Jira) getIssueLabels(eventId int64) []string {
+func (j *Jira) getIssueLabels(eventId string) []string {
 	return []string{
 		fmt.Sprintf(j.issueLabel),
-		fmt.Sprintf(j.issueLabel + ":Event:" + strconv.FormatInt(eventId, 10)),
+		fmt.Sprintf(j.issueLabel + ":Event:" + eventId),
 	}
 }
 
-func (j *Jira) getJQL(eventId int64) string {
-	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+strconv.FormatInt(eventId, 10))
+func (j *Jira) getJQL(eventId string) string {
+	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+eventId)
 }
 
-func (j *Jira) findIssue(eventId int64) (*client.Issue, error) {
+func (j *Jira) findIssue(eventId string) (*client.Issue, error) {
 	jql := j.getJQL(eventId)
 	options := client.SearchOptions{
 		MaxResults: 1,
@@ -82,7 +86,7 @@ func (j *Jira) findIssue(eventId int64) (*client.Issue, error) {
 	}
 }
 
-func (j *Jira) GetIssue(eventId int64) *client.Issue {
+func (j *Jira) GetIssue(eventId string) *client.Issue {
 	issue, err := j.findIssue(eventId)
 	if err != nil {
 		return nil
@@ -92,7 +96,7 @@ func (j *Jira) GetIssue(eventId int64) *client.Issue {
 }
 
 func (j *Jira) getIssueSummary(event *event.Event) string {
-	return j.issuePrefix + event.Name
+	return j.issuePrefix + event.Summary
 }
 
 func (j *Jira) getIssueDescription(event *event.Event) string {
@@ -100,7 +104,7 @@ func (j *Jira) getIssueDescription(event *event.Event) string {
 }
 
 func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
-	issue, _, err := j.client.Issue.Create(&client.Issue{
+	i := &client.Issue{
 		Fields: &client.IssueFields{
 			Project: client.Project{
 				Key: j.project,
@@ -115,7 +119,11 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 				Name: j.username,
 			},
 		},
-	})
+	}
+	fmt.Printf("%v", *i.Fields)
+	issue, response, err := j.client.Issue.Create(i)
+	body, _ := ioutil.ReadAll(response.Body)
+	fmt.Println(string(body))
 	if err != nil {
 		return nil, err
 	}

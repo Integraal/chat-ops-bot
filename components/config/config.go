@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/user"
+	"github.com/integraal/chat-ops-bot/components/jira"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 type Config struct {
 	Users    []user.User
 	Telegram telegram.Config
+	Jira jira.Config
 }
 
 func Read(filename string) *Config {

@@ -8,7 +8,7 @@ import (
 var usersArray []User
 
 type User struct {
-	TelegramId   int
+	ChatId       int
 	JiraUsername string
 	IcsLink      string
 }
@@ -26,6 +26,7 @@ func (u *User) Calendars() ([]*ics.Calendar, error) {
 	parser.Wait()
 	return parser.GetCalendars()
 }
+
 func (u *User) Events(t time.Time) ([]*ics.Event, error) {
 	cal, err := u.Calendars()
 	if err != nil {
