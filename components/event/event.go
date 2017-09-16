@@ -4,6 +4,8 @@ var Events map[int64]Event
 
 type Event struct {
 	ID int64
+	Name string
+	Description string
 
 	Agreed map[int64]bool
 	Disagreed map[int64]bool
