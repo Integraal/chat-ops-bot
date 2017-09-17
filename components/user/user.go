@@ -12,6 +12,7 @@ type User struct {
 	JiraUsername string
 	IcsLink      string
 }
+
 type CalendarConfig struct {
 	UpcomingEvents int
 }

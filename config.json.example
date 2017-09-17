@@ -12,15 +12,20 @@
     "timeout": 60
   },
   "jira": {
-    "url": "https://jira.exset.com/",
+    "url": "https://jira.host",
     "username": "",
     "password": "",
-    "project": "GPS",
+    "project": "PROJECT",
     "issuePrefix": "[TimeTracking] ",
     "issueLabel": "TimeTracking",
     "issueType": "Task"
-  }
+  },
   "calendar": {
     "upcomingLimit": 20
+  },
+  "watchdog": {
+    "updateFreq": 15,
+    "remindBefore": 60,
+    "remindAfter": 10
   }
 }

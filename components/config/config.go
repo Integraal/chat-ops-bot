@@ -7,6 +7,7 @@ import (
 	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/user"
 	"github.com/integraal/chat-ops-bot/components/jira"
+	"github.com/integraal/chat-ops-bot/components/watchdog"
 )
 
 const (
@@ -18,6 +19,7 @@ type Config struct {
 	Telegram telegram.Config
 	Jira jira.Config
 	Calendar user.CalendarConfig
+	Watchdog watchdog.WatchdogConfig
 }
 
 func Read(filename string) *Config {

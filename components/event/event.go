@@ -43,7 +43,7 @@ func (e *Event) GetUser(chatId int64) (*user.User, error) {
 	if u, ok := e.users[chatId]; ok {
 		return &u, nil
 	}
-	return nil, errors.New("User does not exists")
+	return nil, errors.New("User does not exist")
 }
 
 func Append(event Event, user user.User) {
@@ -79,7 +79,7 @@ func Get(eventId string) (*Event, error) {
 	if e, ok := events[eventId]; ok {
 		return &e, nil
 	}
-	return nil, errors.New("Event does not exists")
+	return nil, errors.New("Event does not exist")
 }
 
 func (e *Event) GetAgreedCount() int {
