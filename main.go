@@ -9,14 +9,16 @@ import (
 	"github.com/integraal/chat-ops-bot/components/user"
 	"github.com/integraal/chat-ops-bot/components/jira"
 	"github.com/integraal/chat-ops-bot/components/watchdog"
+	"github.com/integraal/chat-ops-bot/components/datebook"
 )
 
 var conf *config.Config
 
 func init() {
 	conf = config.Initialize()
-	user.Initialize(conf.Users, 20)
+	user.Initialize(conf.Users)
 	jira.Initialize(conf.Jira)
+	datebook.Initialize(conf.Calendar.UpcomingLimit)
 	watchdog.Initialize(conf.Watchdog)
 }
 
@@ -86,7 +88,7 @@ func fetchEvents() {
 			continue
 		}
 		for _, e := range events {
-			evt := event.NewEvent(&e)
+			evt := event.NewEvent(e)
 			event.Append(evt, u)
 		}
 	}

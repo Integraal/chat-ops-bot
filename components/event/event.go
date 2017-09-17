@@ -48,9 +48,9 @@ func (e *Event) GetUser(chatId int64) (*user.User, error) {
 
 func Append(event Event, user user.User) {
 	if e, ok := events[event.ID]; ok {
-		events[e.ID].users[int64(user.ChatId)] = user
+		events[e.ID].users[int64(user.TelegramId)] = user
 	} else {
-		event.users[int64(user.ChatId)] = user
+		event.users[int64(user.TelegramId)] = user
 		events[event.ID] = event
 	}
 }
