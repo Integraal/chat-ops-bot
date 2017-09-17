@@ -2,7 +2,9 @@
   "users": [
     {
       "jiraUsername": "username",
-      "icsLink": "https://link.to/calendar",
+      "icsLinks": [
+        "https://link.to/calendar"
+      ],
       "telegramId": 1234567890
     }
   ],

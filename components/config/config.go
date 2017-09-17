@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/user"
+	"github.com/integraal/chat-ops-bot/components/datebook"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 type Config struct {
 	Users    []user.User
 	Telegram telegram.Config
-	Calendar user.CalendarConfig
+	Calendar datebook.CalendarConfig
 }
 
 func Read(filename string) *Config {
