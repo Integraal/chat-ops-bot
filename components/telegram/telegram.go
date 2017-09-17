@@ -20,7 +20,7 @@ const (
 )
 
 type ButtonPress struct {
-	EventID int64 `json:"eventId"`
+	EventID string `json:"eventId"`
 	Reply   string `json:"reply"`
 }
 
@@ -38,15 +38,15 @@ type Bot struct {
 	timeout    int
 	chatId     int64
 	botApi     tlg.BotAPI
-	onAgree    func(chatId int64, eventId int64) *event.Event
-	onDisagree func(chatId int64, eventId int64) *event.Event
+	onAgree    func(chatId int64, eventId string) *event.Event
+	onDisagree func(chatId int64, eventId string) *event.Event
 }
 
-func (b *Bot) OnAgree(callback func(chatId int64, eventId int64) *event.Event) {
+func (b *Bot) OnAgree(callback func(chatId int64, eventId string) *event.Event) {
 	b.onAgree = callback
 }
 
-func (b *Bot) OnDisagree(callback func(chatId int64, eventId int64) *event.Event) {
+func (b *Bot) OnDisagree(callback func(chatId int64, eventId string) *event.Event) {
 	b.onDisagree = callback
 }
 
@@ -124,11 +124,11 @@ func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 	yesText := "👍"
 	noText := "👎"
 
-	if len(event.Agreed) > 0 {
-		yesText += " " + strconv.Itoa(len(event.Agreed))
+	if count := event.GetAgreedCount(); count > 0 {
+		yesText += " " + strconv.Itoa(count)
 	}
-	if len(event.Disagreed) > 0 {
-		noText += " " + strconv.Itoa(len(event.Disagreed))
+	if count := event.GetDisagreedCount(); count > 0 {
+		noText += " " + strconv.Itoa(count)
 	}
 
 	buttons := []tlg.InlineKeyboardButton{
@@ -144,14 +144,14 @@ func (b *Bot) updatePollMarkup(event *event.Event, messageId int) {
 }
 
 func (b *Bot) SendPoll(event *event.Event) {
-	text := "Кто участвовал в встрече " + strconv.Itoa(int(event.ID)) + "?"
+	text := "Кто участвовал в встрече " + event.ID + "?"
 	message := tlg.NewMessage(b.chatId, text)
 	message.ReplyMarkup = b.getPollMarkup(event)
 	b.botApi.Send(message)
 }
 
 func (b *Bot) SendReminder(event *event.Event) {
-	text := "Скоро будет встреча " + strconv.Itoa(int(event.ID))
+	text := "Скоро будет встреча " + event.ID
 	b.sendMessage(text)
 }
 

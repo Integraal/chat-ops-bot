@@ -7,32 +7,48 @@ import (
 	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/config"
 	"github.com/integraal/chat-ops-bot/components/user"
+	"github.com/integraal/chat-ops-bot/components/jira"
 )
 
 var conf *config.Config
 
 func init() {
 	conf = config.Initialize()
-	user.Initialize(conf.Users)
+	user.Initialize(conf.Users, 20)
+	jira.Initialize(conf.Jira)
 }
 
 func main() {
-	event.Events = make(map[int64]event.Event)
-	event.Events[1] = event.Event{
-		ID: 1,
-		Agreed: make(map[int64]bool),
-		Disagreed: make(map[int64]bool),
+	fetchEvents()
+	fmt.Println(event.GetAll())
+}
+
+func fetchEvents() {
+	event.Clear()
+	for _, u := range user.Get() {
+		events, err := u.UpcomingEvents()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		for _, e := range events {
+			evt := event.NewEvent(&e)
+			event.Append(evt, u)
+		}
 	}
-	event.Events[2] = event.Event{
-		ID: 2,
-		Agreed: make(map[int64]bool),
-		Disagreed: make(map[int64]bool),
-	}
-	e := event.Events[2]
-	var wg sync.WaitGroup
-	bot := startBot(&wg)
-	bot.SendPoll(&e)
-	wg.Wait()
+	//evt, err := event.Get("4f3aab81210fe3ec020e10ce77b21e57")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//issue, err := jira.Get().EnsureIssue(evt)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//fmt.Printf("%v", issue)
+	//var wg sync.WaitGroup
+	//bot := startBot(&wg)
+	//bot.SendPoll(evt)
+	//wg.Wait()
 }
 
 func startBot(wg *sync.WaitGroup) *telegram.Bot {
@@ -40,19 +56,33 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	if err != nil {
 		panic(err)
 	}
-	bot.OnAgree(func(chatId int64, eventId int64) *event.Event {
-		if e, ok := event.Events[eventId]; ok {
-			fmt.Println("NO")
-			return &e
+	bot.OnAgree(func(chatId int64, eventId string) *event.Event {
+		e, err := event.Get(eventId)
+		if err != nil {
+			return nil
 		}
-		return nil
+		u, err := e.GetUser(chatId)
+		if err != nil {
+			return nil
+		}
+		issue, err := jira.Get().EnsureIssue(e)
+		if err != nil {
+			return nil
+		}
+		err = jira.Get().AddUserTime(issue, e, u)
+		if err != nil {
+			return nil
+		}
+		fmt.Println("YES")
+		return e
 	})
-	bot.OnDisagree(func(chatId int64, eventId int64) *event.Event  {
-		if e, ok := event.Events[eventId]; ok {
-			fmt.Println("YES")
-			return &e
+	bot.OnDisagree(func(chatId int64, eventId string) *event.Event {
+		e, err := event.Get(eventId)
+		if err != nil {
+			return nil
 		}
-		return nil
+		fmt.Println("NO")
+		return e
 	})
 	go bot.Listen(wg)
 	wg.Add(1)
