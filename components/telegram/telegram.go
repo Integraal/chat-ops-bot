@@ -20,7 +20,7 @@ const (
 )
 
 type ButtonPress struct {
-	EventID string `json:"eventId"`
+	DateID event.DateID `json:"dateId"`
 	Reply   string `json:"reply"`
 }
 
@@ -34,19 +34,21 @@ func (bp *ButtonPress) marshall() string {
 
 var bot Bot
 
+type CallbackFunc func(chatId int64, dateId event.DateID) *event.Event
+
 type Bot struct {
 	timeout    int
 	chatId     int64
 	botApi     tlg.BotAPI
-	onAgree    func(chatId int64, eventId string) *event.Event
-	onDisagree func(chatId int64, eventId string) *event.Event
+	onAgree    CallbackFunc
+	onDisagree CallbackFunc
 }
 
-func (b *Bot) OnAgree(callback func(chatId int64, eventId string) *event.Event) {
+func (b *Bot) OnAgree(callback CallbackFunc) {
 	b.onAgree = callback
 }
 
-func (b *Bot) OnDisagree(callback func(chatId int64, eventId string) *event.Event) {
+func (b *Bot) OnDisagree(callback CallbackFunc) {
 	b.onDisagree = callback
 }
 
@@ -89,14 +91,14 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 			var responseEvent *event.Event
 			userId := int64(update.CallbackQuery.From.ID)
 			if buttonPress.Reply == REPLY_YES {
-				responseEvent = b.onAgree(userId, buttonPress.EventID)
+				responseEvent = b.onAgree(userId, buttonPress.DateID)
 				if responseEvent != nil {
 					responseEvent.SetAgree(userId)
 				}
 				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Ок, я отмечу время в JIRA"))
 			}
 			if buttonPress.Reply == REPLY_NO {
-				responseEvent = b.onDisagree(userId, buttonPress.EventID)
+				responseEvent = b.onDisagree(userId, buttonPress.DateID)
 				if responseEvent != nil {
 					responseEvent.SetDisagree(userId)
 				}
@@ -113,11 +115,11 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 
 	yes := ButtonPress{
-		EventID: event.ID,
+		DateID: event.GetDateId(),
 		Reply:   REPLY_YES,
 	}
 	no := ButtonPress{
-		EventID: event.ID,
+		DateID: event.GetDateId(),
 		Reply:   REPLY_NO,
 	}
 
