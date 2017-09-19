@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/PuloV/ics-golang"
+	"github.com/integraal/ics-golang"
 	"github.com/integraal/chat-ops-bot/components/datebook"
 	"time"
 )
@@ -9,6 +9,7 @@ import (
 var usersArray []User
 
 type User struct {
+	Name         string
 	TelegramId   int
 	JiraUsername string
 	IcsLinks     []string

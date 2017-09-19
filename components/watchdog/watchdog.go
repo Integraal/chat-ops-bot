@@ -9,8 +9,9 @@ var watchdog Watchdog
 
 type Watchdog struct {
 	updateFreq   int64
-	remindBefore int64
-	remindAfter  int64
+	RemindBefore int64
+	RemindAfter  int64
+	DontRemindAfter  int64
 
 	onTick   func ()
 	onUpdate func()
@@ -22,13 +23,15 @@ type WatchdogConfig struct {
 	UpdateFreq   int64 `json:"updateFreq"`
 	RemindBefore int64 `json:"remindBefore"`
 	RemindAfter  int64 `json:"remindAfter"`
+	DontRemindAfter  int64 `json:"dontRemindAfter"`
 }
 
 func Initialize(config WatchdogConfig) {
 	watchdog = Watchdog{
 		updateFreq:   config.UpdateFreq,
-		remindBefore: config.RemindBefore,
-		remindAfter:  config.RemindAfter,
+		RemindBefore: config.RemindBefore,
+		RemindAfter:  config.RemindAfter,
+		DontRemindAfter: config.DontRemindAfter,
 	}
 }
 
@@ -45,6 +48,8 @@ func (w *Watchdog) OnTick(callback func()) {
 }
 
 func (w *Watchdog) Listen(wg *sync.WaitGroup) {
+	w.ticks = w.updateFreq
+	w.tick()
 	ticker := time.NewTicker(time.Minute)
 	for range ticker.C {
 		w.tick()
@@ -54,8 +59,9 @@ func (w *Watchdog) Listen(wg *sync.WaitGroup) {
 
 func (w *Watchdog) tick() {
 	w.ticks++
-	if w.ticks > w.updateFreq {
+	if w.ticks >= w.updateFreq {
 		w.onUpdate()
+		w.ticks = 0
 	}
 	w.onTick()
 }

@@ -149,14 +149,14 @@ func (b *Bot) updatePollMarkup(event *event.Event, messageId int) {
 func (b *Bot) SendPoll(event *event.Event) {
 	text := `*%s*
 Кто присутствовал на данном мероприятии?
-*%s*, *%s* - *%s*
+*%s* - *%s*, *%s*
 `
 	msg := fmt.Sprintf(
 		text,
 		event.Summary,
-		event.Start.Format("02.01.2006"),
 		event.Start.Format("15:04"),
 		event.End.Format("15:04"),
+		event.Start.Format("02.01.2006"),
 	)
 	message := tlg.NewMessage(b.chatId, msg)
 	message.ParseMode = "Markdown"
@@ -165,7 +165,21 @@ func (b *Bot) SendPoll(event *event.Event) {
 }
 
 func (b *Bot) SendReminder(event *event.Event) {
-	text := "Скоро будет встреча " + event.ID
+	text := `
+Приготовьтесь ко встрече *%s*
+*%s* - *%s*, *%s*
+Участники:
+`
+	text = fmt.Sprintf(
+		text,
+		event.Summary,
+		event.Start.Format("15:04"),
+		event.End.Format("15:04"),
+		event.Start.Format("02.01.2006"),
+	)
+	for _, user := range *event.GetUsers() {
+		text += fmt.Sprintf(" • [%s](tg://user?id=%s)", user.Name, strconv.Itoa(user.TelegramId))
+	}
 	b.sendMessage(text)
 }
 

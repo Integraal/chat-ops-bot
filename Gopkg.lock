@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/PuloV/ics-golang"
-  packages = ["."]
-  revision = "e6b6b056a5f11e8ddb5aba01b1badc53e7b9abca"
-
-[[projects]]
   name = "github.com/andygrunwald/go-jira"
   packages = ["."]
   revision = "acbc88d59582a4885dbd82fd775caa7c15245171"
@@ -32,6 +26,12 @@
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/integraal/ics-golang"
+  packages = ["."]
+  revision = "818fdcac115d8cf9a49a72f507e5bf250c30c663"
+
+[[projects]]
   name = "github.com/technoweenie/multipartstreamer"
   packages = ["."]
   revision = "a90a01d73ae432e2611d178c18367fbaa13e0154"
@@ -46,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "12d6b9df5c2f4a58a0b7af6d4278727df77d51a6386262aabb96373189eecac8"
+  inputs-digest = "c6df012ceee7a328674dafa5cd830b7b0c3611ba496fce4b235995c603a46b94"
   solver-name = "gps-cdcl"
   solver-version = 1

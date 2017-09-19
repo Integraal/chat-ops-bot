@@ -1,7 +1,7 @@
 package datebook
 
 import (
-	"github.com/PuloV/ics-golang"
+	"github.com/integraal/ics-golang"
 	"time"
 )
 

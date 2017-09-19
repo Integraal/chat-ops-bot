@@ -1,6 +1,7 @@
 {
   "users": [
     {
+      "name": "John Smith",
       "jiraUsername": "username",
       "icsLinks": [
         "https://link.to/calendar"
