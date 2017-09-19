@@ -24,8 +24,16 @@ func init() {
 
 func main() {
 	var wg sync.WaitGroup
-	startWatchdog(&wg)
-	startBot(&wg)
+	//startWatchdog(&wg)
+	bot := startBot(&wg)
+	fetchEvents()
+	for _, v := range *event.GetAll() {
+		_, err := v.GetUser(46952639)
+		if err == nil {
+			bot.SendPoll(&v)
+			break
+		}
+	}
 	wg.Wait()
 }
 
@@ -49,6 +57,7 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 		}
 		err = jira.Get().AddUserTime(issue, e, u)
 		if err != nil {
+			fmt.Println(err)
 			return nil
 		}
 		fmt.Println("YES")

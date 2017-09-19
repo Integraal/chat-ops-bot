@@ -7,6 +7,7 @@ import (
 	"time"
 	"strconv"
 	"crypto/md5"
+	"encoding/hex"
 )
 
 var events map[DateID]Event = make(map[DateID]Event)
@@ -31,8 +32,9 @@ func Clear() {
 }
 
 func (e *Event) GetDateId() DateID {
-	key := e.ID + strconv.FormatInt(e.Start.Unix(), 10)
-	return DateID(md5.Sum([]byte(key)))
+	hasher := md5.New()
+	hasher.Write([]byte(e.ID + strconv.FormatInt(e.Start.Unix(), 10)))
+	return DateID(hex.EncodeToString(hasher.Sum(nil)))
 }
 
 func (e *Event) SetAgree(userId int64) {

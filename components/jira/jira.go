@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"errors"
 	"github.com/integraal/chat-ops-bot/components/event"
-	"io/ioutil"
 	"github.com/integraal/chat-ops-bot/components/user"
+	"encoding/json"
+	"io/ioutil"
 )
 
 var jira Jira
@@ -20,6 +21,8 @@ type Jira struct {
 	issuePrefix string
 	issueLabel  string
 	issueType   string
+	epicKey     string
+	epicField   string
 }
 
 type Config struct {
@@ -27,6 +30,8 @@ type Config struct {
 	Username    string `json:"username"`
 	Password    string `json:"password"`
 	Project     string `json:"project"`     // GPS
+	EpicKey     string `json:"epicKey"`     // GPS-99
+	EpicField   string `json:"epicField"`   // customfield_10008
 	IssuePrefix string `json:"issuePrefix"` // [TimeTracking]
 	IssueLabel  string `json:"issueLabel"`  // TimeTracking
 	IssueType   string `json:"issueType"`   // Task
@@ -43,6 +48,8 @@ func Initialize(config Config) {
 		project:     config.Project,
 		username:    config.Username,
 		issueType:   config.IssueType,
+		epicField:   config.EpicField,
+		epicKey:     config.EpicKey,
 	}
 }
 
@@ -117,19 +124,47 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 			Summary:     j.getIssueSummary(event),
 			Description: j.getIssueDescription(event),
 			Labels:      j.getIssueLabels(event.ID),
-			Reporter: &client.User{
-				Name: j.username,
-			},
 		},
 	}
-	fmt.Printf("%+v\n", *i.Fields)
-	issue, response, err := j.client.Issue.Create(i)
-	body, _ := ioutil.ReadAll(response.Body)
-	fmt.Println(string(body))
+
+	issue, _, err := j.createIssueWithEpic(i)
 	if err != nil {
 		return nil, err
 	}
 	return issue, nil
+}
+
+func (j *Jira) createIssueWithEpic(issue *client.Issue) (*client.Issue, *client.Response, error) {
+	apiEndpoint := "rest/api/2/issue/"
+
+	// Hack: add dynamic epic field via json marshalling
+	m := make(map[string]map[string]interface{})
+	b, _ := json.Marshal(issue)
+	json.Unmarshal(b, &m)
+	m["fields"][j.epicField] = j.epicKey
+	// End of hack
+
+	req, err := j.client.NewRequest("POST", apiEndpoint, m)
+	if err != nil {
+		return nil, nil, err
+	}
+	resp, err := j.client.Do(req, nil)
+	if err != nil {
+		// incase of error return the resp for further inspection
+		return nil, resp, err
+	}
+
+	responseIssue := new(client.Issue)
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp, fmt.Errorf("Could not read the returned data")
+	}
+	err = json.Unmarshal(data, responseIssue)
+	if err != nil {
+		return nil, resp, fmt.Errorf("Could not unmarshall the data into struct")
+	}
+	return responseIssue, resp, nil
 }
 
 type WorklogIssue struct {
@@ -141,33 +176,33 @@ type WorklogUser struct {
 }
 
 type Worklog struct {
-	ID int64 `json:"id,omitempty"`
-	Comment string `json:"comment,omitempty"`
-	Self string `json:"self,omitempty"`
-	Issue *WorklogIssue `json:"issue,omitempty"`
-	Author *WorklogUser `json:"author,omitempty"`
+	ID               int64 `json:"id,omitempty"`
+	Comment          string `json:"comment,omitempty"`
+	Self             string `json:"self,omitempty"`
+	Issue            *WorklogIssue `json:"issue,omitempty"`
+	Author           *WorklogUser `json:"author,omitempty"`
 	TimeSpentSeconds int64 `json:"timeSpentSeconds,omitempty"`
-	BilledSeconds int64 `json:"billedSeconds,omitempty"`
-	DateStarted string `json:"dateStarted,omitempty"`
+	BilledSeconds    int64 `json:"billedSeconds,omitempty"`
+	DateStarted      string `json:"dateStarted,omitempty"`
 }
 
 func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.User) error {
 	worklog := Worklog{
-		Comment: "Присутствие на событии " + evt.Summary,
+		Comment:          "Присутствие на событии " + evt.Summary,
 		TimeSpentSeconds: int64(evt.Duration.Seconds()),
-		Author: &WorklogUser{user.JiraUsername},
-		Issue: &WorklogIssue{issue.Key},
-		DateStarted: evt.Start.Format("2006-01-02T15:04:05+0700"),
+		Author:           &WorklogUser{user.JiraUsername},
+		Issue:            &WorklogIssue{issue.Key},
+		DateStarted:      evt.Start.Format("2006-01-02T15:04:05+0700"),
 	}
-	req, err := j.client.NewRequest("POST","rest/tempo-timesheets/3/worklogs/", &worklog)
+	req, err := j.client.NewRequest("POST", "rest/tempo-timesheets/3/worklogs/", &worklog)
 
-	body, _ := ioutil.ReadAll(req.Body)
-	fmt.Println(string(body))
 	if err != nil {
 		return err
 	}
 
-	_, err = j.client.Do(req, nil)
+	resp, err := j.client.Do(req, nil)
+	defer resp.Body.Close()
+
 	if err != nil {
 		return err
 	}

@@ -18,6 +18,8 @@
     "username": "",
     "password": "",
     "project": "PROJECT",
+    "epicKey": "PROJECT-222",
+    "epicFieldName": "customfield_10008",
     "issuePrefix": "[TimeTracking] ",
     "issueLabel": "TimeTracking",
     "issueType": "Task"
