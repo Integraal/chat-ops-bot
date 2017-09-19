@@ -5,9 +5,13 @@ import (
 	"github.com/integraal/chat-ops-bot/components/user"
 	"errors"
 	"time"
+	"strconv"
+	"crypto/md5"
 )
 
-var events map[string]Event = make(map[string]Event)
+var events map[DateID]Event = make(map[DateID]Event)
+
+type DateID string
 
 type Event struct {
 	ID          string
@@ -23,7 +27,12 @@ type Event struct {
 }
 
 func Clear() {
-	events = make(map[string]Event)
+	events = make(map[DateID]Event)
+}
+
+func (e *Event) GetDateId() DateID {
+	key := e.ID + strconv.FormatInt(e.Start.Unix(), 10)
+	return DateID(md5.Sum([]byte(key)))
 }
 
 func (e *Event) SetAgree(userId int64) {
@@ -47,11 +56,11 @@ func (e *Event) GetUser(chatId int64) (*user.User, error) {
 }
 
 func Append(event Event, user user.User) {
-	if e, ok := events[event.ID]; ok {
-		events[e.ID].users[int64(user.TelegramId)] = user
+	if e, ok := events[event.GetDateId()]; ok {
+		events[e.GetDateId()].users[int64(user.TelegramId)] = user
 	} else {
 		event.users[int64(user.TelegramId)] = user
-		events[event.ID] = event
+		events[event.GetDateId()] = event
 	}
 }
 
@@ -71,12 +80,12 @@ func NewEvent(ics *ics.Event) Event {
 	return evt
 }
 
-func GetAll() *map[string]Event {
+func GetAll() *map[DateID]Event {
 	return &events
 }
 
-func Get(eventId string) (*Event, error) {
-	if e, ok := events[eventId]; ok {
+func Get(dateId DateID) (*Event, error) {
+	if e, ok := events[dateId]; ok {
 		return &e, nil
 	}
 	return nil, errors.New("Event does not exist")

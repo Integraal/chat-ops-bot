@@ -34,8 +34,8 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	if err != nil {
 		panic(err)
 	}
-	bot.OnAgree(func(chatId int64, eventId string) *event.Event {
-		e, err := event.Get(eventId)
+	bot.OnAgree(func(chatId int64, dateId event.DateID) *event.Event {
+		e, err := event.Get(dateId)
 		if err != nil {
 			return nil
 		}
@@ -54,8 +54,8 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 		fmt.Println("YES")
 		return e
 	})
-	bot.OnDisagree(func(chatId int64, eventId string) *event.Event {
-		e, err := event.Get(eventId)
+	bot.OnDisagree(func(chatId int64, dateId event.DateID) *event.Event {
+		e, err := event.Get(dateId)
 		if err != nil {
 			return nil
 		}
