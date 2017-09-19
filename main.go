@@ -10,6 +10,7 @@ import (
 	"github.com/integraal/chat-ops-bot/components/jira"
 	"github.com/integraal/chat-ops-bot/components/watchdog"
 	"github.com/integraal/chat-ops-bot/components/datebook"
+	"time"
 )
 
 var conf *config.Config
@@ -42,8 +43,8 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	if err != nil {
 		panic(err)
 	}
-	bot.OnAgree(func(chatId int64, dateId event.DateID) *event.Event {
-		e, err := event.Get(dateId)
+	bot.OnAgree(func(chatId int64, eventId string) *event.Event {
+		e, err := event.Get(eventId)
 		if err != nil {
 			return nil
 		}
@@ -63,8 +64,8 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 		fmt.Println("YES")
 		return e
 	})
-	bot.OnDisagree(func(chatId int64, dateId event.DateID) *event.Event {
-		e, err := event.Get(dateId)
+	bot.OnDisagree(func(chatId int64, eventId string) *event.Event {
+		e, err := event.Get(eventId)
 		if err != nil {
 			return nil
 		}
@@ -91,7 +92,7 @@ func startWatchdog(wg *sync.WaitGroup) *watchdog.Watchdog {
 func fetchEvents() {
 	event.Clear()
 	for _, u := range user.Get() {
-		events, err := u.UpcomingEvents()
+		events, err := u.DatesAround(time.Now(), 2, 2)
 		if err != nil {
 			fmt.Println(err)
 			continue

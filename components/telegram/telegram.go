@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"sync"
 	"github.com/integraal/chat-ops-bot/components/event"
+	"fmt"
 )
 
 type Config struct {
@@ -20,7 +21,7 @@ const (
 )
 
 type ButtonPress struct {
-	DateID event.DateID `json:"dateId"`
+	EventID string `json:"eventId"`
 	Reply   string `json:"reply"`
 }
 
@@ -34,7 +35,7 @@ func (bp *ButtonPress) marshall() string {
 
 var bot Bot
 
-type CallbackFunc func(chatId int64, dateId event.DateID) *event.Event
+type CallbackFunc func(chatId int64, eventId string) *event.Event
 
 type Bot struct {
 	timeout    int
@@ -91,14 +92,14 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 			var responseEvent *event.Event
 			userId := int64(update.CallbackQuery.From.ID)
 			if buttonPress.Reply == REPLY_YES {
-				responseEvent = b.onAgree(userId, buttonPress.DateID)
+				responseEvent = b.onAgree(userId, buttonPress.EventID)
 				if responseEvent != nil {
 					responseEvent.SetAgree(userId)
 				}
 				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Ок, я отмечу время в JIRA"))
 			}
 			if buttonPress.Reply == REPLY_NO {
-				responseEvent = b.onDisagree(userId, buttonPress.DateID)
+				responseEvent = b.onDisagree(userId, buttonPress.EventID)
 				if responseEvent != nil {
 					responseEvent.SetDisagree(userId)
 				}
@@ -115,11 +116,11 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 
 	yes := ButtonPress{
-		DateID: event.GetDateId(),
+		EventID: event.ID,
 		Reply:   REPLY_YES,
 	}
 	no := ButtonPress{
-		DateID: event.GetDateId(),
+		EventID: event.ID,
 		Reply:   REPLY_NO,
 	}
 
@@ -146,8 +147,19 @@ func (b *Bot) updatePollMarkup(event *event.Event, messageId int) {
 }
 
 func (b *Bot) SendPoll(event *event.Event) {
-	text := "Кто участвовал в встрече " + event.ID + "?"
-	message := tlg.NewMessage(b.chatId, text)
+	text := `*%s*
+Кто присутствовал на данном мероприятии?
+*%s*, *%s* - *%s*
+`
+	msg := fmt.Sprintf(
+		text,
+		event.Summary,
+		event.Start.Format("02.01.2006"),
+		event.Start.Format("15:04"),
+		event.End.Format("15:04"),
+	)
+	message := tlg.NewMessage(b.chatId, msg)
+	message.ParseMode = "Markdown"
 	message.ReplyMarkup = b.getPollMarkup(event)
 	b.botApi.Send(message)
 }
@@ -159,5 +171,6 @@ func (b *Bot) SendReminder(event *event.Event) {
 
 func (b *Bot) sendMessage(text string) {
 	message := tlg.NewMessage(b.chatId, text)
+	message.ParseMode = "Markdown"
 	b.botApi.Send(message)
 }

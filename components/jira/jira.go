@@ -8,6 +8,7 @@ import (
 	"github.com/integraal/chat-ops-bot/components/user"
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 )
 
 var jira Jira
@@ -29,8 +30,8 @@ type Config struct {
 	Url         string `json:"url"`
 	Username    string `json:"username"`
 	Password    string `json:"password"`
-	Project     string `json:"project"`     // GPS
-	EpicKey     string `json:"epicKey"`     // GPS-99
+	Project     string `json:"project"`     // PROJECT
+	EpicKey     string `json:"epicKey"`     // PROJECT-99
 	EpicField   string `json:"epicField"`   // customfield_10008
 	IssuePrefix string `json:"issuePrefix"` // [TimeTracking]
 	IssueLabel  string `json:"issueLabel"`  // TimeTracking
@@ -59,7 +60,7 @@ func Get() *Jira {
 
 func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, error) {
 	var err error
-	issue := j.GetIssue(event.ID)
+	issue := j.GetIssue(event.ImportedID)
 	if issue == nil {
 		issue, err = j.createIssue(event)
 		if err != nil {
@@ -69,19 +70,19 @@ func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, error) {
 	return issue, nil
 }
 
-func (j *Jira) getIssueLabels(eventId string) []string {
+func (j *Jira) getIssueLabels(eventImportedId string) []string {
 	return []string{
 		fmt.Sprintf(j.issueLabel),
-		fmt.Sprintf(j.issueLabel + ":Event:" + eventId),
+		fmt.Sprintf(j.issueLabel + ":Event:" + eventImportedId),
 	}
 }
 
-func (j *Jira) getJQL(eventId string) string {
-	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+eventId)
+func (j *Jira) getJQL(eventImportedId string) string {
+	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+eventImportedId)
 }
 
-func (j *Jira) findIssue(eventId string) (*client.Issue, error) {
-	jql := j.getJQL(eventId)
+func (j *Jira) findIssue(eventImportedId string) (*client.Issue, error) {
+	jql := j.getJQL(eventImportedId)
 	options := client.SearchOptions{
 		MaxResults: 1,
 	}
@@ -95,8 +96,8 @@ func (j *Jira) findIssue(eventId string) (*client.Issue, error) {
 	}
 }
 
-func (j *Jira) GetIssue(eventId string) *client.Issue {
-	issue, err := j.findIssue(eventId)
+func (j *Jira) GetIssue(eventImportedId string) *client.Issue {
+	issue, err := j.findIssue(eventImportedId)
 	if err != nil {
 		return nil
 	} else {
@@ -109,7 +110,7 @@ func (j *Jira) getIssueSummary(event *event.Event) string {
 }
 
 func (j *Jira) getIssueDescription(event *event.Event) string {
-	return event.Description
+	return strings.Replace(event.Description, "\\n", "\n", -1)
 }
 
 func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
@@ -123,7 +124,7 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 			},
 			Summary:     j.getIssueSummary(event),
 			Description: j.getIssueDescription(event),
-			Labels:      j.getIssueLabels(event.ID),
+			Labels:      j.getIssueLabels(event.ImportedID),
 		},
 	}
 
@@ -192,7 +193,7 @@ func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.Use
 		TimeSpentSeconds: int64(evt.Duration.Seconds()),
 		Author:           &WorklogUser{user.JiraUsername},
 		Issue:            &WorklogIssue{issue.Key},
-		DateStarted:      evt.Start.Format("2006-01-02T15:04:05+0700"),
+		DateStarted:      evt.Start.Format("2006-01-02T15:04:05.000"),
 	}
 	req, err := j.client.NewRequest("POST", "rest/tempo-timesheets/3/worklogs/", &worklog)
 
