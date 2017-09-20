@@ -87,6 +87,9 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 		fmt.Println(time.Now().Format("02.01.2006 15:04:05 -0700"))
 		for eventId := range *events {
 			evt, _ := event.Get(eventId)
+			if len(*evt.GetUsers()) < 2 {
+				continue
+			}
 			dbEvent := db.Get().Event(eventId)
 			// Check if event is upcoming
 			toStart := evt.Start.Sub(now)

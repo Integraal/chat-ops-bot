@@ -20,7 +20,7 @@ type Event struct {
 	Start       time.Time
 	End         time.Time
 
-	users map[int64]user.User
+	users map[int64]*user.User
 
 	dbEvent		*db.Event
 }
@@ -31,20 +31,20 @@ func Clear() {
 
 func (e *Event) GetUser(chatId int64) (*user.User, error) {
 	if u, ok := e.users[chatId]; ok {
-		return &u, nil
+		return u, nil
 	}
 	return nil, errors.New("User does not exist")
 }
 
-func (e *Event) GetUsers() *map[int64]user.User {
-	return &e.users
+func (e *Event) GetUsers() map[int64]*user.User {
+	return e.users
 }
 
 func Append(event *Event, user user.User) {
 	if e, ok := events[event.ID]; ok {
-		events[e.ID].users[int64(user.TelegramId)] = user
+		events[e.ID].users[int64(user.TelegramId)] = &user
 	} else {
-		event.users[int64(user.TelegramId)] = user
+		event.users[int64(user.TelegramId)] = &user
 		events[event.ID] = event
 	}
 }
@@ -59,7 +59,7 @@ func NewEvent(ics *ics.Event) Event {
 		Start:       ics.GetStart(),
 		End:         ics.GetEnd(),
 
-		users: make(map[int64]user.User),
+		users: make(map[int64]*user.User),
 	}
 	return evt
 }
