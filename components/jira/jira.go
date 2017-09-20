@@ -58,16 +58,17 @@ func Get() *Jira {
 	return &jira
 }
 
-func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, error) {
+func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, *client.Response, error) {
 	var err error
+	var response *client.Response
 	issue := j.GetIssue(event.ImportedID)
 	if issue == nil {
-		issue, err = j.createIssue(event)
+		issue, response, err = j.createIssue(event)
 		if err != nil {
-			return nil, err
+			return nil, response, err
 		}
 	}
-	return issue, nil
+	return issue, nil, nil
 }
 
 func (j *Jira) getIssueLabels(eventImportedId string) []string {
@@ -113,7 +114,7 @@ func (j *Jira) getIssueDescription(event *event.Event) string {
 	return strings.Replace(event.Description, "\\n", "\n", -1)
 }
 
-func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
+func (j *Jira) createIssue(event *event.Event) (*client.Issue, *client.Response, error) {
 	i := &client.Issue{
 		Fields: &client.IssueFields{
 			Project: client.Project{
@@ -128,11 +129,11 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, error) {
 		},
 	}
 
-	issue, _, err := j.createIssueWithEpic(i)
+	issue, response, err := j.createIssueWithEpic(i)
 	if err != nil {
-		return nil, err
+		return nil, response, err
 	}
-	return issue, nil
+	return issue, nil, nil
 }
 
 func (j *Jira) createIssueWithEpic(issue *client.Issue) (*client.Issue, *client.Response, error) {
@@ -187,7 +188,7 @@ type Worklog struct {
 	DateStarted      string `json:"dateStarted,omitempty"`
 }
 
-func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.User) error {
+func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.User) (*client.Response, error) {
 	worklog := Worklog{
 		Comment:          "Присутствие на событии " + evt.Summary,
 		TimeSpentSeconds: int64(evt.Duration.Seconds()),
@@ -198,14 +199,13 @@ func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.Use
 	req, err := j.client.NewRequest("POST", "rest/tempo-timesheets/3/worklogs/", &worklog)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resp, err := j.client.Do(req, nil)
-	defer resp.Body.Close()
 
 	if err != nil {
-		return err
+		return resp, err
 	}
-	return nil
+	return resp, nil
 }

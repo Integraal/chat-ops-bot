@@ -20,7 +20,7 @@
     "password": "",
     "project": "PROJECT",
     "epicKey": "PROJECT-222",
-    "epicFieldName": "customfield_10008",
+    "epicField": "customfield_10008",
     "issuePrefix": "[TimeTracking] ",
     "issueLabel": "TimeTracking",
     "issueType": "Task"
@@ -31,6 +31,7 @@
   "watchdog": {
     "updateFreq": 15,
     "remindBefore": 60,
-    "remindAfter": 10
+    "remindAfter": 10,
+    "dontRemindAfter": 120
   }
 }

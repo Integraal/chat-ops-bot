@@ -35,7 +35,7 @@ func (bp *ButtonPress) marshall() string {
 
 var bot Bot
 
-type CallbackFunc func(chatId int64, eventId string) *event.Event
+type CallbackFunc func(chatId int64, eventId string) (*event.Event, error)
 
 type Bot struct {
 	timeout    int
@@ -92,18 +92,24 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 			var responseEvent *event.Event
 			userId := int64(update.CallbackQuery.From.ID)
 			if buttonPress.Reply == REPLY_YES {
-				responseEvent = b.onAgree(userId, buttonPress.EventID)
-				if responseEvent != nil {
-					responseEvent.SetAgree(userId)
+				responseEvent, err = b.onAgree(userId, buttonPress.EventID)
+				if err == nil {
+					responseEvent.SetAttended(userId, true)
+					b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Ок, я отмечу время в JIRA"))
+				} else {
+					fmt.Println(err)
+					b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Извините, произошла какая-то ошибка"))
 				}
-				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Ок, я отмечу время в JIRA"))
 			}
 			if buttonPress.Reply == REPLY_NO {
-				responseEvent = b.onDisagree(userId, buttonPress.EventID)
-				if responseEvent != nil {
-					responseEvent.SetDisagree(userId)
+				responseEvent, err = b.onDisagree(userId, buttonPress.EventID)
+				if err == nil {
+					responseEvent.SetAttended(userId, false)
+					b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Время в JIRA не будет учтено"))
+				} else {
+					fmt.Println(err)
+					b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Извините, произошла какая-то ошибка"))
 				}
-				b.botApi.AnswerCallbackQuery(tlg.NewCallback(update.CallbackQuery.ID, "Время в JIRA не будет учтено"))
 			}
 			if responseEvent != nil {
 				b.updatePollMarkup(responseEvent, update.CallbackQuery.Message.MessageID)
@@ -127,10 +133,10 @@ func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 	yesText := "👍"
 	noText := "👎"
 
-	if count := event.GetAgreedCount(); count > 0 {
+	if count := event.GetAttendedCount(); count > 0 {
 		yesText += " " + strconv.Itoa(count)
 	}
-	if count := event.GetDisagreedCount(); count > 0 {
+	if count := event.GetUnattendedCount(); count > 0 {
 		noText += " " + strconv.Itoa(count)
 	}
 

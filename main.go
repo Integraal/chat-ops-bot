@@ -11,6 +11,8 @@ import (
 	"github.com/integraal/chat-ops-bot/components/watchdog"
 	"github.com/integraal/chat-ops-bot/components/datebook"
 	"time"
+	"github.com/integraal/chat-ops-bot/components/db"
+	"io/ioutil"
 )
 
 var conf *config.Config
@@ -35,32 +37,39 @@ func startBot(wg *sync.WaitGroup) *telegram.Bot {
 	if err != nil {
 		panic(err)
 	}
-	bot.OnAgree(func(chatId int64, eventId string) *event.Event {
+	bot.OnAgree(func(chatId int64, eventId string) (*event.Event, error) {
 		e, err := event.Get(eventId)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		u, err := e.GetUser(chatId)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		issue, err := jira.Get().EnsureIssue(e)
+		issue, response, err := jira.Get().EnsureIssue(e)
 		if err != nil {
-			return nil
+			if response != nil {
+				body, _ := ioutil.ReadAll(response.Body)
+				fmt.Println(string(body))
+			}
+			return nil, err
 		}
-		err = jira.Get().AddUserTime(issue, e, u)
+		response, err = jira.Get().AddUserTime(issue, e, u)
 		if err != nil {
-			fmt.Println(err)
-			return nil
+			if response != nil {
+				body, _ := ioutil.ReadAll(response.Body)
+				fmt.Println(string(body))
+			}
+			return nil, err
 		}
-		return e
+		return e, nil
 	})
-	bot.OnDisagree(func(chatId int64, eventId string) *event.Event {
+	bot.OnDisagree(func(chatId int64, eventId string) (*event.Event, error) {
 		e, err := event.Get(eventId)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		return e
+		return e, nil
 	})
 	go bot.Listen(wg)
 	wg.Add(1)
@@ -77,23 +86,24 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 		now := time.Now()
 		fmt.Println(time.Now().Format("02.01.2006 15:04:05 -0700"))
 		for eventId := range *events {
-			e, _ := event.Get(eventId)
+			evt, _ := event.Get(eventId)
+			dbEvent := db.Get().Event(eventId)
 			// Check if event is upcoming
-			toStart := e.Start.Sub(now)
+			toStart := evt.Start.Sub(now)
 			remind := toStart > 0
 			remind = remind && toStart <= time.Duration(wd.RemindBefore)*time.Minute
-			if remind && !e.ReminderSent {
-				e.ReminderSent = true
-				bot.SendReminder(e)
+			if remind && !dbEvent.GetReminderSent() {
+				dbEvent.SetReminderSent(true)
+				bot.SendReminder(evt)
 			}
 			// Check if event finished
-			fromEnd := now.Sub(e.End)
+			fromEnd := now.Sub(evt.End)
 			sendPoll := fromEnd >= time.Duration(wd.RemindAfter)*time.Minute
 			sendPoll = sendPoll && fromEnd <= time.Duration(wd.DontRemindAfter)*time.Minute
-			fmt.Println(e.Summary, e.End.Format("02.01.2006 15:04:05 -0700"), fromEnd)
-			if sendPoll && !e.PollSent {
-				e.PollSent = true
-				bot.SendPoll(e)
+			fmt.Println(evt.Summary, evt.End.Format("02.01.2006 15:04:05 -0700"), fromEnd)
+			if sendPoll && !dbEvent.GetPollSent() {
+				dbEvent.SetPollSent(true)
+				bot.SendPoll(evt)
 			}
 		}
 	})
@@ -104,6 +114,7 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 
 func fetchEvents() {
 	fmt.Println("Fetching new events...")
+	event.Clear()
 	for _, u := range user.Get() {
 		events, err := u.DatesAround(time.Now(), 2, 2)
 		if err != nil {

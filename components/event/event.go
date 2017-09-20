@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 	"strings"
+	"github.com/integraal/chat-ops-bot/components/db"
 )
 
 var events map[string]*Event = make(map[string]*Event)
@@ -19,25 +20,13 @@ type Event struct {
 	Start       time.Time
 	End         time.Time
 
-	ReminderSent bool
-	PollSent     bool
+	users map[int64]user.User
 
-	users        map[int64]user.User
-	agreed       map[int64]bool
-	disagreed    map[int64]bool
+	dbEvent		*db.Event
 }
 
-func (e *Event) SetAgree(userId int64) {
-	e.agreed[userId] = true
-	if _, ok := e.disagreed[userId]; ok {
-		delete(e.disagreed, userId)
-	}
-}
-func (e *Event) SetDisagree(userId int64) {
-	e.disagreed[userId] = true
-	if _, ok := e.agreed[userId]; ok {
-		delete(e.agreed, userId)
-	}
+func Clear() {
+	events = make(map[string]*Event)
 }
 
 func (e *Event) GetUser(chatId int64) (*user.User, error) {
@@ -58,8 +47,6 @@ func Append(event *Event, user user.User) {
 		event.users[int64(user.TelegramId)] = user
 		events[event.ID] = event
 	}
-	// TODO: deal with event updates. When event is updated it gets new ID and old event doesn't disappear
-	// TODO: clean old events from memory
 }
 
 func NewEvent(ics *ics.Event) Event {
@@ -72,9 +59,7 @@ func NewEvent(ics *ics.Event) Event {
 		Start:       ics.GetStart(),
 		End:         ics.GetEnd(),
 
-		users:     make(map[int64]user.User),
-		agreed:    make(map[int64]bool),
-		disagreed: make(map[int64]bool),
+		users: make(map[int64]user.User),
 	}
 	return evt
 }
@@ -90,10 +75,21 @@ func Get(id string) (*Event, error) {
 	return nil, errors.New("Event does not exist")
 }
 
-func (e *Event) GetAgreedCount() int {
-	return len(e.agreed)
+func (e *Event) getDbEvent() *db.Event {
+	if e.dbEvent == nil {
+		e.dbEvent = db.Get().Event(e.ID)
+	}
+	return e.dbEvent
 }
 
-func (e *Event) GetDisagreedCount() int {
-	return len(e.disagreed)
+func (e *Event) SetAttended(userId int64, value bool) {
+	e.getDbEvent().SetAttended(userId, value)
+}
+
+func (e *Event) GetAttendedCount() int {
+	return e.getDbEvent().GetAttendedCount()
+}
+
+func (e *Event) GetUnattendedCount() int {
+	return e.getDbEvent().GetUnattendedCount()
 }
