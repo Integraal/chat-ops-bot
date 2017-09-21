@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/integraal/chat-ops-calendar"
   packages = ["calendar"]
-  revision = "e5dffb674d4ebeab7b3a07d147ab9fc9c22b1739"
+  revision = "d77769f8c9674affa508d244453bb3132d727a8f"
 
 [[projects]]
   name = "github.com/technoweenie/multipartstreamer"

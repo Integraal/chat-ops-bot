@@ -5,8 +5,6 @@ import (
 	"log"
 	"context"
 	pb "github.com/integraal/chat-ops-calendar/calendar"
-	"fmt"
-	"io"
 )
 
 type Config struct {
@@ -25,7 +23,7 @@ func Initialize(config Config) {
 }
 
 func GetEvents(email string) ([]*pb.Event, error) {
-	stream, err := client.GetEvents(context.Background(), &pb.EventRequest{
+	collection, err := client.GetEvents(context.Background(), &pb.EventRequest{
 		Email: email,
 		Start: "-2days",
 		End:   "+2days",
@@ -33,17 +31,5 @@ func GetEvents(email string) ([]*pb.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	events := []*pb.Event{}
-	for {
-		event, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err == nil {
-			events = append(events, event)
-		} else {
-			return nil, fmt.Errorf("Error fetching events: %v", err)
-		}
-	}
-	return events, nil
+	return collection.Items, nil
 }
