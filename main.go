@@ -9,10 +9,10 @@ import (
 	"github.com/integraal/chat-ops-bot/components/user"
 	"github.com/integraal/chat-ops-bot/components/jira"
 	"github.com/integraal/chat-ops-bot/components/watchdog"
-	"github.com/integraal/chat-ops-bot/components/datebook"
 	"time"
 	"github.com/integraal/chat-ops-bot/components/db"
 	"io/ioutil"
+	"github.com/integraal/chat-ops-bot/components/calendar"
 )
 
 var conf *config.Config
@@ -21,7 +21,7 @@ func init() {
 	conf = config.Initialize()
 	user.Initialize(conf.Users)
 	jira.Initialize(conf.Jira)
-	datebook.Initialize(conf.Calendar.UpcomingLimit)
+	calendar.Initialize(conf.Calendar)
 	watchdog.Initialize(conf.Watchdog)
 }
 
@@ -92,7 +92,7 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 			}
 			dbEvent := db.Get().Event(eventId)
 			// Check if event is upcoming
-			toStart := evt.Start.Sub(now)
+			toStart := evt.GetStartTime().Sub(now)
 			remind := toStart > 0
 			remind = remind && toStart <= time.Duration(wd.RemindBefore)*time.Minute
 			if remind && !dbEvent.GetReminderSent() {
@@ -100,10 +100,10 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 				bot.SendReminder(evt)
 			}
 			// Check if event finished
-			fromEnd := now.Sub(evt.End)
+			fromEnd := now.Sub(evt.GetEndTime())
 			sendPoll := fromEnd >= time.Duration(wd.RemindAfter)*time.Minute
 			sendPoll = sendPoll && fromEnd <= time.Duration(wd.DontRemindAfter)*time.Minute
-			fmt.Println(evt.Summary, evt.End.Format("02.01.2006 15:04:05 -0700"), fromEnd)
+			fmt.Println(evt.Summary, evt.GetEndTime().Format("02.01.2006 15:04:05 -0700"), fromEnd)
 			if sendPoll && !dbEvent.GetPollSent() {
 				dbEvent.SetPollSent(true)
 				bot.SendPoll(evt)
@@ -119,7 +119,7 @@ func fetchEvents() {
 	fmt.Println("Fetching new events...")
 	event.Clear()
 	for _, u := range user.Get() {
-		events, err := u.DatesAround(time.Now(), 2, 2)
+		events, err := calendar.GetEvents(u.Email)
 		if err != nil {
 			fmt.Println(err)
 			continue

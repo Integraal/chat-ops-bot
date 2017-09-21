@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"github.com/integraal/chat-ops-bot/components/telegram"
 	"github.com/integraal/chat-ops-bot/components/user"
-	"github.com/integraal/chat-ops-bot/components/datebook"
 	"github.com/integraal/chat-ops-bot/components/watchdog"
 	"github.com/integraal/chat-ops-bot/components/jira"
+	"github.com/integraal/chat-ops-bot/components/calendar"
 )
 
 const (
@@ -19,7 +19,7 @@ type Config struct {
 	Users    []user.User
 	Telegram telegram.Config
 	Jira jira.Config
-	Calendar datebook.CalendarConfig
+	Calendar calendar.Config
 	Watchdog watchdog.WatchdogConfig
 }
 

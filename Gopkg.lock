@@ -21,15 +21,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/golang/protobuf"
+  packages = ["proto","ptypes","ptypes/any","ptypes/duration","ptypes/timestamp"]
+  revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
+
+[[projects]]
+  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
-  name = "github.com/integraal/ics-golang"
-  packages = ["."]
-  revision = "818fdcac115d8cf9a49a72f507e5bf250c30c663"
+  name = "github.com/integraal/chat-ops-calendar"
+  packages = ["calendar"]
+  revision = "e5dffb674d4ebeab7b3a07d147ab9fc9c22b1739"
 
 [[projects]]
   name = "github.com/technoweenie/multipartstreamer"
@@ -43,9 +49,33 @@
   revision = "e4d1ddd28c17dd89ed26327cf69fded22060671b"
   version = "v1.0.1"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
+  revision = "b60f3a92103dfd93dfcb900ec77c6d0643510868"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/text"
+  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "1e559d0a00eef8a9a43151db4665280bd8dd5886"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [".","codes","connectivity","credentials","grpclb/grpc_lb_v1/messages","grpclog","internal","keepalive","metadata","naming","peer","stats","status","tap","transport"]
+  revision = "f92cdcd7dcdc69e81b2d7b338479a19a8723cfa3"
+  version = "v1.6.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c6df012ceee7a328674dafa5cd830b7b0c3611ba496fce4b235995c603a46b94"
+  inputs-digest = "20bda91241fc5e47305d216e1fcbf8892813009bc917668bade70f9787205d6d"
   solver-name = "gps-cdcl"
   solver-version = 1

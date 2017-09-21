@@ -61,7 +61,7 @@ func Get() *Jira {
 func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, *client.Response, error) {
 	var err error
 	var response *client.Response
-	issue := j.GetIssue(event.ImportedID)
+	issue := j.GetIssue(event.Uid)
 	if issue == nil {
 		issue, response, err = j.createIssue(event)
 		if err != nil {
@@ -71,19 +71,19 @@ func (j *Jira) EnsureIssue(event *event.Event) (*client.Issue, *client.Response,
 	return issue, nil, nil
 }
 
-func (j *Jira) getIssueLabels(eventImportedId string) []string {
+func (j *Jira) getIssueLabels(eventUid string) []string {
 	return []string{
 		fmt.Sprintf(j.issueLabel),
-		fmt.Sprintf(j.issueLabel + ":Event:" + eventImportedId),
+		fmt.Sprintf(j.issueLabel + ":Event:" + eventUid),
 	}
 }
 
-func (j *Jira) getJQL(eventImportedId string) string {
-	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+eventImportedId)
+func (j *Jira) getJQL(eventUid string) string {
+	return fmt.Sprintf(JQLPattern, j.project, j.issueLabel+":Event:"+eventUid)
 }
 
-func (j *Jira) findIssue(eventImportedId string) (*client.Issue, error) {
-	jql := j.getJQL(eventImportedId)
+func (j *Jira) findIssue(eventUid string) (*client.Issue, error) {
+	jql := j.getJQL(eventUid)
 	options := client.SearchOptions{
 		MaxResults: 1,
 	}
@@ -97,8 +97,8 @@ func (j *Jira) findIssue(eventImportedId string) (*client.Issue, error) {
 	}
 }
 
-func (j *Jira) GetIssue(eventImportedId string) *client.Issue {
-	issue, err := j.findIssue(eventImportedId)
+func (j *Jira) GetIssue(eventUid string) *client.Issue {
+	issue, err := j.findIssue(eventUid)
 	if err != nil {
 		return nil
 	} else {
@@ -125,7 +125,7 @@ func (j *Jira) createIssue(event *event.Event) (*client.Issue, *client.Response,
 			},
 			Summary:     j.getIssueSummary(event),
 			Description: j.getIssueDescription(event),
-			Labels:      j.getIssueLabels(event.ImportedID),
+			Labels:      j.getIssueLabels(event.Uid),
 		},
 	}
 
@@ -191,10 +191,10 @@ type Worklog struct {
 func (j *Jira) AddUserTime(issue *client.Issue, evt *event.Event, user *user.User) (*client.Response, error) {
 	worklog := Worklog{
 		Comment:          "Присутствие на событии " + evt.Summary,
-		TimeSpentSeconds: int64(evt.Duration.Seconds()),
+		TimeSpentSeconds: int64(evt.GetDuration().Seconds()),
 		Author:           &WorklogUser{user.JiraUsername},
 		Issue:            &WorklogIssue{issue.Key},
-		DateStarted:      evt.Start.Format("2006-01-02T15:04:05.000"),
+		DateStarted:      evt.GetStartTime().Format("2006-01-02T15:04:05.000"),
 	}
 	req, err := j.client.NewRequest("POST", "rest/tempo-timesheets/3/worklogs/", &worklog)
 

@@ -1,27 +1,17 @@
 package event
 
 import (
-	"github.com/integraal/ics-golang"
 	"github.com/integraal/chat-ops-bot/components/user"
 	"errors"
-	"time"
-	"strings"
 	"github.com/integraal/chat-ops-bot/components/db"
+	"github.com/integraal/chat-ops-calendar/calendar"
 )
 
 var events map[string]*Event = make(map[string]*Event)
 
 type Event struct {
-	ID          string
-	ImportedID  string
-	Summary     string
-	Description string
-	Duration    time.Duration
-	Start       time.Time
-	End         time.Time
-
+	*calendar.Event
 	users map[int64]*user.User
-
 	dbEvent		*db.Event
 }
 
@@ -41,24 +31,17 @@ func (e *Event) GetUsers() map[int64]*user.User {
 }
 
 func Append(event *Event, user user.User) {
-	if e, ok := events[event.ID]; ok {
-		events[e.ID].users[int64(user.TelegramId)] = &user
+	if e, ok := events[event.Id]; ok {
+		events[e.Id].users[int64(user.TelegramId)] = &user
 	} else {
 		event.users[int64(user.TelegramId)] = &user
-		events[event.ID] = event
+		events[event.Id] = event
 	}
 }
 
-func NewEvent(ics *ics.Event) Event {
+func NewEvent(event *calendar.Event) Event {
 	evt := Event{
-		ID:          ics.GetID(),
-		ImportedID:  strings.Replace(ics.GetImportedID(), "-", "", -1),
-		Summary:     ics.GetSummary(),
-		Description: ics.GetDescription(),
-		Duration:    ics.GetEnd().Sub(ics.GetStart()),
-		Start:       ics.GetStart(),
-		End:         ics.GetEnd(),
-
+		Event: event,
 		users: make(map[int64]*user.User),
 	}
 	return evt
@@ -77,7 +60,7 @@ func Get(id string) (*Event, error) {
 
 func (e *Event) getDbEvent() *db.Event {
 	if e.dbEvent == nil {
-		e.dbEvent = db.Get().Event(e.ID)
+		e.dbEvent = db.Get().Event(e.Id)
 	}
 	return e.dbEvent
 }

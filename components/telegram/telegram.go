@@ -122,11 +122,11 @@ func (b *Bot) Listen(wg *sync.WaitGroup) {
 func (b *Bot) getPollMarkup(event *event.Event) tlg.InlineKeyboardMarkup {
 
 	yes := ButtonPress{
-		EventID: event.ID,
+		EventID: event.Id,
 		Reply:   REPLY_YES,
 	}
 	no := ButtonPress{
-		EventID: event.ID,
+		EventID: event.Id,
 		Reply:   REPLY_NO,
 	}
 
@@ -160,9 +160,9 @@ func (b *Bot) SendPoll(event *event.Event) {
 	msg := fmt.Sprintf(
 		text,
 		event.Summary,
-		event.Start.Format("15:04"),
-		event.End.Format("15:04"),
-		event.Start.Format("02.01.2006"),
+		event.GetStartTime().Format("15:04"),
+		event.GetEndTime().Format("15:04"),
+		event.GetStartTime().Format("02.01.2006"),
 	)
 	message := tlg.NewMessage(b.chatId, msg)
 	message.ParseMode = "Markdown"
@@ -179,9 +179,9 @@ func (b *Bot) SendReminder(event *event.Event) {
 	text = fmt.Sprintf(
 		text,
 		event.Summary,
-		event.Start.Format("15:04"),
-		event.End.Format("15:04"),
-		event.Start.Format("02.01.2006"),
+		event.GetStartTime().Format("15:04"),
+		event.GetEndTime().Format("15:04"),
+		event.GetStartTime().Format("02.01.2006"),
 	)
 	for _, user := range event.GetUsers() {
 		text += fmt.Sprintf(" • [%s](tg://user?id=%s)", user.Name, strconv.Itoa(user.TelegramId))

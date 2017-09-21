@@ -26,7 +26,7 @@
     "issueType": "Task"
   },
   "calendar": {
-    "upcomingLimit": 20
+    "address": "localhost:5001"
   },
   "watchdog": {
     "updateFreq": 15,
