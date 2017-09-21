@@ -88,6 +88,7 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 		for eventId := range *events {
 			evt, _ := event.Get(eventId)
 			if len(evt.GetUsers()) < 2 {
+				fmt.Println(evt.Summary + " is ignored")
 				continue
 			}
 			dbEvent := db.Get().Event(eventId)
@@ -103,7 +104,7 @@ func startWatchdog(wg *sync.WaitGroup, bot *telegram.Bot) *watchdog.Watchdog {
 			fromEnd := now.Sub(evt.End)
 			sendPoll := fromEnd >= time.Duration(wd.RemindAfter)*time.Minute
 			sendPoll = sendPoll && fromEnd <= time.Duration(wd.DontRemindAfter)*time.Minute
-			fmt.Println(evt.Summary, evt.End.Format("02.01.2006 15:04:05 -0700"), fromEnd)
+			fmt.Println(evt.Summary, toStart, fromEnd)
 			if sendPoll && !dbEvent.GetPollSent() {
 				dbEvent.SetPollSent(true)
 				bot.SendPoll(evt)
