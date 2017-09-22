@@ -184,7 +184,7 @@ func (b *Bot) SendReminder(event *event.Event) {
 		event.Start.Format("02.01.2006"),
 	)
 	for _, user := range event.GetUsers() {
-		text += fmt.Sprintf(" • [%s](tg://user?id=%s)", user.Name, strconv.Itoa(user.TelegramId))
+		text += fmt.Sprintf(" • [%s](tg://user?id=%s)\n", user.Name, strconv.Itoa(user.TelegramId))
 	}
 	b.sendMessage(text)
 }
