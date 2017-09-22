@@ -26,6 +26,7 @@ func UpcomingEvents(calendar *ics.Calendar) []*ics.Event {
 func Calendars(links []string) ([]*ics.Calendar, error) {
 	parser := ics.New()
 	ics.RepeatRuleApply = true
+	ics.MaxRepeats = 1000
 	inputChan := parser.GetInputChan()
 	for _, link := range links {
 		inputChan <- link
